@@ -396,7 +396,7 @@ export default function BriefForm() {
                                     initialFocus
                                     mode="range"
                                     defaultMonth={field.value?.from}
-                                    selected={{from: field.value.from, to: field.value.to} as DateRange}
+                                    selected={field.value as DateRange}
                                     onSelect={(range) => field.onChange(range)}
                                     numberOfMonths={2}
                                 />
