@@ -1,11 +1,12 @@
 import { z } from 'zod';
+import { RecommendationResult } from './actions';
 
 export const briefSchema = z.object({
   brand_name: z.string().min(2, 'Brand name must be at least 2 characters').max(80),
   industry_category: z.string({ required_error: 'Please select an industry.' }),
   objective: z.string({ required_error: 'Please select an objective.' }),
   primary_geography: z.array(z.object({
-    state: z.string(),
+    state: z.string().min(1, 'State is required.'),
     city: z.string().optional(),
   })).min(1, 'Please select at least one geography.'),
   sport_preferences: z.array(z.string()).min(1, 'Please select at least one sport.'),

@@ -3,7 +3,7 @@ import { useState, useTransition } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Brief, briefSchema } from '@/lib/types';
-import { submitBrief } from '@/lib/actions';
+import { generateRecommendations, RecommendationResult } from '@/lib/actions';
 import {
   industries,
   objectives,
@@ -50,7 +50,6 @@ import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { Progress } from '@/components/ui/progress';
 
 const formSteps = [
   { id: 1, title: 'Campaign Basics', fields: ['brand_name', 'industry_category', 'objective'] },
@@ -58,7 +57,13 @@ const formSteps = [
   { id: 3, title: 'Logistics & Contact', fields: ['budget_range', 'timeline', 'deliverable_types', 'primary_contact'] },
 ];
 
-export default function BriefForm() {
+
+interface BriefFormProps {
+    onFormSubmit: (results: RecommendationResult) => void;
+    onFormStart: () => void;
+}
+
+export default function BriefForm({ onFormSubmit, onFormStart }: BriefFormProps) {
   const [step, setStep] = useState(1);
   const [isPending, startTransition] = useTransition();
 
@@ -81,8 +86,10 @@ export default function BriefForm() {
   });
 
   const onSubmit = (data: Brief) => {
-    startTransition(() => {
-      submitBrief(data);
+    onFormStart();
+    startTransition(async () => {
+      const result = await generateRecommendations(data);
+      onFormSubmit(result);
     });
   };
 
@@ -101,7 +108,7 @@ export default function BriefForm() {
   return (
     <Card className="mt-8 shadow-lg bg-card/80 backdrop-blur-sm border-white/20">
         <CardHeader>
-             <CardTitle className="font-headline text-2xl tracking-tight text-center text-primary-foreground/90">
+             <CardTitle className="font-headline text-2xl tracking-tight text-center">
                 {formSteps[step - 1].title}
             </CardTitle>
              <div className="flex items-center gap-4 pt-2">
@@ -114,7 +121,7 @@ export default function BriefForm() {
         </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-8">
+          <CardContent className="space-y-8 pt-6">
             {step === 1 && (
               <>
                 <FormField
@@ -191,53 +198,56 @@ export default function BriefForm() {
                 <FormItem>
                     <FormLabel>Primary Geography</FormLabel>
                     <FormDescription>Select target states and cities.</FormDescription>
-                    {fields.map((field, index) => (
-                        <div key={field.id} className="flex gap-2 items-end">
-                            <FormField
-                                control={form.control}
-                                name={`primary_geography.${index}.state`}
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select State" />
-                                        </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                        {Object.keys(geographies).map(state => (
-                                            <SelectItem key={state} value={state}>{state}</SelectItem>
-                                        ))}
-                                        </SelectContent>
-                                    </Select>
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name={`primary_geography.${index}.city`}
-                                render={({ field: cityField }) => (
-                                    <FormItem className="flex-1">
-                                    <Select onValueChange={cityField.onChange} defaultValue={cityField.value} disabled={!form.watch(`primary_geography.${index}.state`)}>
-                                        <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select City (Optional)" />
-                                        </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                        {(geographies[form.watch(`primary_geography.${index}.state`) as keyof typeof geographies] || []).map(city => (
-                                            <SelectItem key={city} value={city}>{city}</SelectItem>
-                                        ))}
-                                        </SelectContent>
-                                    </Select>
-                                    </FormItem>
-                                )}
-                            />
-                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
-                                <Trash2 className="h-4 w-4"/>
-                            </Button>
-                        </div>
-                    ))}
+                    <div className="space-y-2">
+                        {fields.map((field, index) => (
+                            <div key={field.id} className="flex gap-2 items-end">
+                                <FormField
+                                    control={form.control}
+                                    name={`primary_geography.${index}.state`}
+                                    render={({ field }) => (
+                                        <FormItem className="flex-1">
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select State" />
+                                            </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                            {Object.keys(geographies).map(state => (
+                                                <SelectItem key={state} value={state}>{state}</SelectItem>
+                                            ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage/>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name={`primary_geography.${index}.city`}
+                                    render={({ field: cityField }) => (
+                                        <FormItem className="flex-1">
+                                        <Select onValueChange={cityField.onChange} defaultValue={cityField.value} disabled={!form.watch(`primary_geography.${index}.state`)}>
+                                            <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select City (Optional)" />
+                                            </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                            {(geographies[form.watch(`primary_geography.${index}.state`) as keyof typeof geographies] || []).map(city => (
+                                                <SelectItem key={city} value={city}>{city}</SelectItem>
+                                            ))}
+                                            </SelectContent>
+                                        </Select>
+                                        </FormItem>
+                                    )}
+                                />
+                                <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
+                                    <Trash2 className="h-4 w-4"/>
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
                     <Button type="button" variant="outline" size="sm" onClick={() => append({ state: '', city: '' })}>
                         Add Location
                     </Button>
@@ -267,7 +277,7 @@ export default function BriefForm() {
                                       onCheckedChange={(checked) => {
                                         return checked
                                           ? field.onChange([
-                                              ...field.value,
+                                              ...(field.value || []),
                                               item,
                                             ])
                                           : field.onChange(
@@ -314,7 +324,7 @@ export default function BriefForm() {
                                     onCheckedChange={(checked) => {
                                       return checked
                                         ? field.onChange([
-                                            ...field.value,
+                                            ...(field.value || []),
                                             item,
                                           ])
                                         : field.onChange(
@@ -422,7 +432,7 @@ export default function BriefForm() {
                                                 checked={field.value?.includes(item)}
                                                 onCheckedChange={(checked) => {
                                                 return checked
-                                                    ? field.onChange([...field.value, item])
+                                                    ? field.onChange([...(field.value || []), item])
                                                     : field.onChange(field.value?.filter((value) => value !== item));
                                                 }}
                                             />
@@ -454,7 +464,7 @@ export default function BriefForm() {
                 </>
             )}
           </CardContent>
-          <CardFooter className="flex justify-between">
+          <CardFooter className="flex justify-between pt-6">
             {step > 1 ? (
               <Button type="button" variant="outline" onClick={prevStep}>
                 Back

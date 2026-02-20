@@ -1,38 +1,9 @@
 'use server';
 
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { Brief, Athlete, League, Venue } from '@/lib/types';
 import { athletes, leagues, venues } from '@/lib/data';
 
-export async function submitBrief(brief: Brief) {
-  const briefId = `brf_${Date.now()}`;
-
-  // In a real app, you would save the brief to a database and create a lead.
-  console.log(`Lead created for brief ${briefId}:`, brief.primary_contact.email);
-
-  // Create a smaller object with only the data needed for recommendations
-  // to avoid exceeding cookie size limits.
-  const relevantBriefData = {
-    brand_name: brief.brand_name,
-    objective: brief.objective,
-    sport_preferences: brief.sport_preferences,
-    primary_geography: brief.primary_geography,
-    primary_contact: {
-      email: brief.primary_contact.email,
-    },
-  };
-
-  cookies().set('brief-data', JSON.stringify(relevantBriefData), {
-    path: '/',
-    httpOnly: true,
-    maxAge: 60 * 5, // 5 minutes validity
-  });
-
-  redirect(`/recommendations/${briefId}`);
-}
-
-type RecommendationResult = {
+export type RecommendationResult = {
   brief: Brief;
   athletes: (Athlete & { matchScore: number })[];
   leagues: (League & { matchScore: number })[];
@@ -56,101 +27,81 @@ const OBJECTIVE_FIT_MAP: Record<string, Record<string, number>> = {
   Trials: { Athlete: 1.0, League: 0.6, Venue: 0.8 },
 };
 
-export async function getRecommendations(
-  briefId: string
-): Promise<RecommendationResult> {
-  const cookieStore = cookies();
-  const briefCookie = cookieStore.get('brief-data');
+export async function generateRecommendations(brief: Brief): Promise<RecommendationResult> {
+    // In a real app, you would save the brief to a database and create a lead.
+    const briefId = `brf_${Date.now()}`;
+    console.log(`Lead created for brief ${briefId}:`, brief.primary_contact.email);
 
-  if (!briefCookie?.value) {
-    // This would be a DB lookup in a real app
-    throw new Error('Brief not found. Please submit a new brief.');
-  }
-  
-  const partialBrief = JSON.parse(briefCookie.value);
+    const briefSports = new Set(brief.sport_preferences);
+    const briefStates = new Set(brief.primary_geography.map((g) => g.state));
+    const briefCities = new Set(
+        brief.primary_geography.map((g) => g.city).filter(Boolean)
+    );
 
-  // Reconstruct a full brief object to satisfy the downstream types.
-  // The missing fields are not used in the recommendations page.
-  const brief: Brief = {
-    ...partialBrief,
-    industry_category: '',
-    target_audience: [],
-    budget_range: '',
-    timeline: { from: new Date(), to: undefined },
-    deliverable_types: [],
-    primary_contact: {
-      name: '',
-      email: partialBrief.primary_contact.email,
-      phone: '',
-    }
-  };
+    const scoreAsset = <
+        T extends {
+        sport?: string;
+        sports_supported?: string[];
+        state: string;
+        city: string;
+        featured: boolean;
+        type: string;
+        }
+    >(
+        asset: T
+    ): T & { matchScore: number } => {
+        let sportMatch = 0;
+        const assetSports = asset.type === 'Venue' ? asset.sports_supported || [] : [asset.sport || ''];
+        for (const sport of assetSports) {
+            if (briefSports.has(sport)) {
+                sportMatch = 1.0;
+                break;
+            }
+        }
 
-  const briefSports = new Set(brief.sport_preferences);
-  const briefStates = new Set(brief.primary_geography.map((g) => g.state));
-  const briefCities = new Set(
-    brief.primary_geography.map((g) => g.city).filter(Boolean)
-  );
+        let geoMatch = 0;
+        if (asset.city && briefCities.has(asset.city)) {
+        geoMatch = 1.0;
+        } else if (briefStates.has(asset.state)) {
+        geoMatch = 0.7;
+        }
 
-  const scoreAsset = <
-    T extends {
-      sport: string;
-      state: string;
-      city: string;
-      featured: boolean;
-      type: string;
-    }
-  >(
-    asset: T
-  ): T & { matchScore: number } => {
-    let sportMatch = 0;
-    if (briefSports.has(asset.sport)) {
-      sportMatch = 1.0;
-    }
+        const objectiveFit = OBJECTIVE_FIT_MAP[brief.objective]?.[asset.type] ?? 0.5;
 
-    let geoMatch = 0;
-    if (asset.city && briefCities.has(asset.city)) {
-      geoMatch = 1.0;
-    } else if (briefStates.has(asset.state)) {
-      geoMatch = 0.7;
-    }
+        const featuredBoost = asset.featured ? 1.0 : 0;
 
-    const objectiveFit = OBJECTIVE_FIT_MAP[brief.objective]?.[asset.type] ?? 0.5;
+        const score =
+        100 *
+        (WEIGHTS.sport * sportMatch +
+            WEIGHTS.geo * geoMatch +
+            WEIGHTS.objective * objectiveFit +
+            WEIGHTS.featured * featuredBoost);
 
-    const featuredBoost = asset.featured ? 1.0 : 0;
+        return { ...asset, matchScore: parseFloat(score.toFixed(1)) };
+    };
 
-    const score =
-      100 *
-      (WEIGHTS.sport * sportMatch +
-        WEIGHTS.geo * geoMatch +
-        WEIGHTS.objective * objectiveFit +
-        WEIGHTS.featured * featuredBoost);
+    const scoredAthletes = athletes
+        .map(scoreAsset)
+        .filter((a) => a.matchScore > 10)
+        .sort((a, b) => b.matchScore - a.matchScore)
+        .slice(0, 20);
 
-    return { ...asset, matchScore: parseFloat(score.toFixed(1)) };
-  };
+    const scoredLeagues = leagues
+        .map(scoreAsset)
+        .filter((l) => l.matchScore > 10)
+        .sort((a, b) => b.matchScore - a.matchScore)
+        .slice(0, 10);
 
-  const scoredAthletes = athletes
-    .map(scoreAsset)
-    .filter((a) => a.matchScore > 10)
-    .sort((a, b) => b.matchScore - a.matchScore)
-    .slice(0, 20);
+    const scoredVenues = venues
+        .map(scoreAsset)
+        .filter((v) => v.matchScore > 10)
+        .sort((a, b) => b.matchScore - a.matchScore)
+        .slice(0, 10);
 
-  const scoredLeagues = leagues
-    .map(scoreAsset)
-    .filter((l) => l.matchScore > 10)
-    .sort((a, b) => b.matchScore - a.matchScore)
-    .slice(0, 10);
-
-  const scoredVenues = venues
-    .map((v) => ({ ...v, sport: v.sports_supported[0] || '' })) // simplification for scoring
-    .map(scoreAsset)
-    .filter((v) => v.matchScore > 10)
-    .sort((a, b) => b.matchScore - a.matchScore)
-    .slice(0, 10);
-
-  return {
-    brief,
-    athletes: scoredAthletes,
-    leagues: scoredLeagues,
-    venues: scoredVenues,
-  };
+    return {
+        brief,
+        athletes: scoredAthletes,
+        leagues: scoredLeagues,
+        venues: scoredVenues,
+    };
 }
