@@ -50,6 +50,7 @@ import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
+import { Progress } from '@/components/ui/progress';
 
 const formSteps = [
   { id: 1, title: 'Campaign Basics', fields: ['brand_name', 'industry_category', 'objective'] },
@@ -69,6 +70,7 @@ export default function BriefForm() {
       sport_preferences: [],
       target_audience: [],
       deliverable_types: [],
+      timeline: { from: undefined, to: undefined },
       primary_contact: { name: '', email: '', phone: '' },
     },
   });
@@ -103,16 +105,12 @@ export default function BriefForm() {
   return (
     <Card className="mt-8 shadow-lg">
         <CardHeader>
-            <div className="flex justify-between items-center">
-                <div>
-                    <CardDescription>Step {step} of {formSteps.length}</CardDescription>
-                    <CardTitle className="font-headline">{formSteps[step-1].title}</CardTitle>
+            <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                    <CardTitle className="font-headline text-2xl">{formSteps[step - 1].title}</CardTitle>
+                    <div className="text-sm text-muted-foreground">Step {step} of {formSteps.length}</div>
                 </div>
-                <div className="flex gap-1">
-                    {formSteps.map((s) => (
-                        <div key={s.id} className={cn("h-2 w-12 rounded-full", step >= s.id ? 'bg-primary' : 'bg-muted')}></div>
-                    ))}
-                </div>
+                <Progress value={(step / formSteps.length) * 100} className="h-2" />
             </div>
         </CardHeader>
       <Form {...form}>
@@ -396,7 +394,7 @@ export default function BriefForm() {
                                     initialFocus
                                     mode="range"
                                     defaultMonth={field.value?.from}
-                                    selected={field.value as DateRange}
+                                    selected={field.value as DateRange | undefined}
                                     onSelect={(range) => field.onChange(range)}
                                     numberOfMonths={2}
                                 />

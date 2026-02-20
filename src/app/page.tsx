@@ -9,16 +9,9 @@ function BriefFormSkeleton() {
   return (
     <Card className="mt-8 shadow-lg">
       <CardHeader>
-        <div className="flex justify-between items-center">
-            <div>
-                <Skeleton className="h-4 w-[100px] mb-2" />
-                <Skeleton className="h-8 w-[200px]" />
-            </div>
-            <div className="flex gap-1">
-                <Skeleton className="h-2 w-12 rounded-full" />
-                <Skeleton className="h-2 w-12 rounded-full" />
-                <Skeleton className="h-2 w-12 rounded-full" />
-            </div>
+        <div className="space-y-2">
+            <Skeleton className="h-8 w-[250px]" />
+            <Skeleton className="h-2 w-full" />
         </div>
       </CardHeader>
       <CardContent className="space-y-8">
@@ -54,15 +47,17 @@ export default function Home() {
   return (
     <main className="flex-1 overflow-y-auto p-4 md:p-8">
       <div className="mx-auto max-w-4xl">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-5xl font-headline">
-            Sponsorship Matchmaker
-          </h1>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Find the perfect athletes, leagues, and venues for your brand.
-            Submit your campaign brief to get instant, AI-powered
-            recommendations.
-          </p>
+        <div className="bg-card border rounded-xl p-8 md:p-12 mb-12 shadow-sm">
+            <div className="text-center">
+                <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl font-headline">
+                    Sponsorship <span className="text-primary">Matchmaker</span>
+                </h1>
+                <p className="mt-6 text-lg leading-8 text-muted-foreground max-w-2xl mx-auto">
+                    Find the perfect athletes, leagues, and venues for your brand.
+                    Submit your campaign brief to get instant, AI-powered
+                    recommendations.
+                </p>
+            </div>
         </div>
         {isClient ? <BriefForm /> : <BriefFormSkeleton />}
       </div>

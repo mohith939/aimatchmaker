@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { Brief, Recommendation } from "@/lib/types";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Trophy, Shield, Building, Star } from 'lucide-react';
 import AiExplanation from "./AiExplanation";
@@ -27,7 +27,7 @@ export default function RecommendationCard({ item, brief, isShortlisted, onShort
   const placeholder = PlaceHolderImages.find((p) => p.id === item.image);
 
   return (
-    <Card className="overflow-hidden group transition-all hover:shadow-xl hover:-translate-y-1">
+    <Card className="overflow-hidden group transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1 hover:border-primary border">
       <CardHeader className="p-0 relative">
         {placeholder ? (
           <Image
@@ -43,30 +43,14 @@ export default function RecommendationCard({ item, brief, isShortlisted, onShort
             <span className="text-muted-foreground text-sm">No Image</span>
           </div>
         )}
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-        <Badge variant="destructive" className="absolute top-2 right-2 bg-primary/90 backdrop-blur-sm border-none text-primary-foreground">
+        <Badge className="absolute top-3 right-3 bg-accent text-accent-foreground font-bold border-2 border-background">
             {item.matchScore}% Match
         </Badge>
-        <div className="absolute top-1 left-1 flex items-center gap-0.5">
-            <AiExplanation brief={brief} recommendation={item} className="text-primary-foreground/80 hover:text-primary-foreground bg-transparent hover:bg-black/20" />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.preventDefault();
-                onShortlistToggle(item.id);
-              }}
-              className="text-primary-foreground/80 hover:text-primary-foreground bg-transparent hover:bg-black/20"
-            >
-              <Star className={cn("h-5 w-5", isShortlisted && "fill-amber-400 text-amber-400")} />
-              <span className="sr-only">Shortlist</span>
-            </Button>
-        </div>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent className="p-4 space-y-3">
         <div className="flex justify-between items-start">
-            <h3 className="font-bold font-headline text-lg mb-1 leading-tight">{item.name}</h3>
-            {'tier' in item && <Badge variant="outline">{item.tier}</Badge>}
+            <h3 className="font-bold font-headline text-lg mb-1 leading-tight pr-2">{item.name}</h3>
+            {'tier' in item && <Badge variant="secondary" className="shrink-0">{item.tier}</Badge>}
         </div>
         <div className="text-sm text-muted-foreground space-y-2">
             <div className="flex items-center gap-2">
@@ -79,6 +63,21 @@ export default function RecommendationCard({ item, brief, isShortlisted, onShort
             </div>
         </div>
       </CardContent>
+       <CardFooter className="bg-muted/40 p-2 flex justify-between items-center">
+         <AiExplanation brief={brief} recommendation={item} />
+         <Button
+            variant={isShortlisted ? "default" : "outline"}
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              onShortlistToggle(item.id);
+            }}
+            className="h-8"
+          >
+            <Star className={cn("h-4 w-4 mr-2", isShortlisted && "fill-amber-400 text-amber-500")} />
+            <span>{isShortlisted ? 'Shortlisted' : 'Shortlist'}</span>
+          </Button>
+      </CardFooter>
     </Card>
   );
 }

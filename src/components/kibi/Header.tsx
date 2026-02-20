@@ -3,12 +3,12 @@ import { Zap } from "lucide-react";
 
 export default function Header() {
   return (
-    <header className="border-b">
+    <header className="border-b shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl font-headline">
-             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Zap className="text-primary-foreground" />
+             <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
+                <Zap className="text-accent-foreground" />
              </div>
             <span className="text-primary">KIBI</span>
             <span className="text-foreground">Sports</span>

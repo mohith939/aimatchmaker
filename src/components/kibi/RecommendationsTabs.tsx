@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Brief, Athlete, League, Venue } from "@/lib/types";
 import RecommendationCard from "./RecommendationCard";
-import { Users, Shield, Building, Frown, Mail } from "lucide-react";
+import { Users, Shield, Building, Frown, Mail, PartyPopper } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -27,7 +27,7 @@ interface RecommendationsTabsProps {
 }
 
 const EmptyState = ({ type }: { type: string }) => (
-    <div className="text-center py-16 px-4 border-2 border-dashed rounded-lg mt-8">
+    <div className="text-center py-16 px-4 border-2 border-dashed rounded-lg mt-8 bg-card">
         <Frown className="mx-auto h-12 w-12 text-muted-foreground" />
         <h3 className="mt-4 text-lg font-semibold font-headline">No Matching {type} Found</h3>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -63,7 +63,7 @@ export default function RecommendationsTabs({
 
   return (
     <>
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8 bg-card border rounded-xl p-6 shadow-sm">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl font-headline">
                     Your Recommended Matches
@@ -80,6 +80,7 @@ export default function RecommendationsTabs({
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                         <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
+                            <PartyPopper className="mr-2"/>
                             Book a Demo
                         </Button>
                     </AlertDialogTrigger>
