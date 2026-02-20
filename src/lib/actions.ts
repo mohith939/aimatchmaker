@@ -1,10 +1,11 @@
 'use server';
 
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { Brief, Athlete, League, Venue } from '@/lib/types';
 import { athletes, leagues, venues } from '@/lib/data';
 
-export async function submitBrief(brief: Brief): Promise<string> {
+export async function submitBrief(brief: Brief) {
   const briefId = `brf_${Date.now()}`;
 
   // In a real app, you would save the brief to a database and create a lead.
@@ -28,7 +29,7 @@ export async function submitBrief(brief: Brief): Promise<string> {
     maxAge: 60 * 5, // 5 minutes validity
   });
 
-  return briefId;
+  redirect(`/recommendations/${briefId}`);
 }
 
 type RecommendationResult = {
