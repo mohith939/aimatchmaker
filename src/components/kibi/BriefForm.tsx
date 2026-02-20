@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Brief, briefSchema } from '@/lib/types';
@@ -60,7 +60,7 @@ const formSteps = [
 
 export default function BriefForm() {
   const [step, setStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const form = useForm<Brief>({
     resolver: zodResolver(briefSchema),
@@ -80,9 +80,10 @@ export default function BriefForm() {
     name: "primary_geography",
   });
 
-  const onSubmit = async (data: Brief) => {
-    setIsSubmitting(true);
-    await submitBrief(data);
+  const onSubmit = (data: Brief) => {
+    startTransition(async () => {
+      await submitBrief(data);
+    });
   };
 
   const nextStep = async () => {
@@ -463,8 +464,8 @@ export default function BriefForm() {
                 Next
               </Button>
             ) : (
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Generating Matches...' : 'Get Recommendations'}
+              <Button type="submit" disabled={isPending}>
+                {isPending ? 'Generating Matches...' : 'Get Recommendations'}
               </Button>
             )}
           </CardFooter>
