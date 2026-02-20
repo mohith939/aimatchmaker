@@ -82,12 +82,7 @@ export default function BriefForm() {
 
   const onSubmit = async (data: Brief) => {
     setIsSubmitting(true);
-    try {
-      await submitBrief(data);
-    } catch (error) {
-      console.error("Submission failed", error);
-      setIsSubmitting(false);
-    }
+    await submitBrief(data);
   };
 
   const nextStep = async () => {
