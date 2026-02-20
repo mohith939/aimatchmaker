@@ -4,14 +4,11 @@ import RecommendationsTabs from '@/components/kibi/RecommendationsTabs';
 
 export default async function RecommendationsPage({
   params,
-  searchParams,
 }: {
   params: { brief_id: string };
-  searchParams: { brief?: string };
 }) {
   const { brief, athletes, leagues, venues } = await getRecommendations(
-    params.brief_id,
-    searchParams.brief
+    params.brief_id
   );
 
   return (

@@ -84,8 +84,7 @@ export default function BriefForm() {
 
   const onSubmit = (data: Brief) => {
     startTransition(async () => {
-      const path = await submitBrief(data);
-      router.push(path);
+      await submitBrief(data);
     });
   };
 
