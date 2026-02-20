@@ -11,7 +11,19 @@ export async function submitBrief(brief: Brief) {
   // In a real app, you would save the brief to a database and create a lead.
   console.log(`Lead created for brief ${briefId}:`, brief.primary_contact.email);
 
-  cookies().set('brief-data', JSON.stringify(brief), {
+  // Create a smaller object with only the data needed for recommendations
+  // to avoid exceeding cookie size limits.
+  const relevantBriefData = {
+    brand_name: brief.brand_name,
+    objective: brief.objective,
+    sport_preferences: brief.sport_preferences,
+    primary_geography: brief.primary_geography,
+    primary_contact: {
+      email: brief.primary_contact.email,
+    },
+  };
+
+  cookies().set('brief-data', JSON.stringify(relevantBriefData), {
     path: '/',
     httpOnly: true,
     maxAge: 60 * 5, // 5 minutes validity
@@ -50,25 +62,28 @@ export async function getRecommendations(
   const cookieStore = cookies();
   const briefCookie = cookieStore.get('brief-data');
 
-  // Once read, the cookie is no longer needed.
-  if (briefCookie) {
-    cookies().delete('brief-data');
-  }
-
   if (!briefCookie?.value) {
     // This would be a DB lookup in a real app
     throw new Error('Brief not found. Please submit a new brief.');
   }
+  
+  const partialBrief = JSON.parse(briefCookie.value);
 
-  const brief: Brief = JSON.parse(briefCookie.value);
-
-  // The date comes in as a string from JSON, so we need to convert it back to a Date object.
-  if (brief.timeline && brief.timeline.from) {
-    (brief.timeline.from as any) = new Date(brief.timeline.from);
-  }
-  if (brief.timeline && brief.timeline.to) {
-    (brief.timeline.to as any) = new Date(brief.timeline.to);
-  }
+  // Reconstruct a full brief object to satisfy the downstream types.
+  // The missing fields are not used in the recommendations page.
+  const brief: Brief = {
+    ...partialBrief,
+    industry_category: '',
+    target_audience: [],
+    budget_range: '',
+    timeline: { from: new Date(), to: undefined },
+    deliverable_types: [],
+    primary_contact: {
+      name: '',
+      email: partialBrief.primary_contact.email,
+      phone: '',
+    }
+  };
 
   const briefSports = new Set(brief.sport_preferences);
   const briefStates = new Set(brief.primary_geography.map((g) => g.state));
