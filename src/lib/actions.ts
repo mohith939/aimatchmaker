@@ -7,14 +7,14 @@ import { athletes, leagues, venues } from '@/lib/data';
 // We no longer use a server-side variable, as it's unreliable in a serverless environment.
 // The brief data is now passed via URL parameters.
 
-export async function submitBrief(brief: Brief) {
+export async function submitBrief(brief: Brief): Promise<string> {
   const briefId = `brf_${Date.now()}`;
 
   // In a real app, you would save the brief to a database and create a lead.
   console.log(`Lead created for brief ${briefId}:`, brief.primary_contact.email);
   
   const briefQuery = encodeURIComponent(JSON.stringify(brief));
-  redirect(`/recommendations/${briefId}?brief=${briefQuery}`);
+  return `/recommendations/${briefId}?brief=${briefQuery}`;
 }
 
 type RecommendationResult = {

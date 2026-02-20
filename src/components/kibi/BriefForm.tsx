@@ -1,5 +1,6 @@
 'use client';
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Brief, briefSchema } from '@/lib/types';
@@ -61,6 +62,7 @@ const formSteps = [
 export default function BriefForm() {
   const [step, setStep] = useState(1);
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const form = useForm<Brief>({
     resolver: zodResolver(briefSchema),
@@ -81,8 +83,9 @@ export default function BriefForm() {
   });
 
   const onSubmit = (data: Brief) => {
-    startTransition(() => {
-      submitBrief(data);
+    startTransition(async () => {
+      const path = await submitBrief(data);
+      router.push(path);
     });
   };
 
