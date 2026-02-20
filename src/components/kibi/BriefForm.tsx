@@ -81,8 +81,8 @@ export default function BriefForm() {
   });
 
   const onSubmit = (data: Brief) => {
-    startTransition(async () => {
-      await submitBrief(data);
+    startTransition(() => {
+      submitBrief(data);
     });
   };
 
