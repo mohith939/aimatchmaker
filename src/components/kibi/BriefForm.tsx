@@ -84,7 +84,8 @@ export default function BriefForm() {
 
   const onSubmit = (data: Brief) => {
     startTransition(async () => {
-      await submitBrief(data);
+      const briefId = await submitBrief(data);
+      router.push(`/recommendations/${briefId}`);
     });
   };
 
@@ -101,14 +102,17 @@ export default function BriefForm() {
   };
 
   return (
-    <Card className="mt-8 shadow-lg">
+    <Card className="mt-8 shadow-lg bg-card/80 backdrop-blur-sm border-white/20">
         <CardHeader>
-            <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <CardTitle className="font-headline text-2xl">{formSteps[step - 1].title}</CardTitle>
-                    <div className="text-sm text-muted-foreground">Step {step} of {formSteps.length}</div>
-                </div>
-                <Progress value={(step / formSteps.length) * 100} className="h-2" />
+             <CardTitle className="font-headline text-2xl tracking-tight text-center text-primary-foreground/90">
+                {formSteps[step - 1].title}
+            </CardTitle>
+             <div className="flex items-center gap-4 pt-2">
+                {formSteps.map((s, i) => (
+                    <div key={s.id} className="flex-1 h-1 rounded-full bg-primary/20">
+                        <div className={cn("h-1 rounded-full bg-accent transition-all duration-300", step > i ? 'w-full' : 'w-0', step === i + 1 && 'w-1/2')}/>
+                    </div>
+                ))}
             </div>
         </CardHeader>
       <Form {...form}>
