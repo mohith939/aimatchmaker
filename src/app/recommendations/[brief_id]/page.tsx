@@ -4,10 +4,15 @@ import RecommendationsTabs from '@/components/kibi/RecommendationsTabs';
 
 export default async function RecommendationsPage({
   params,
+  searchParams,
 }: {
   params: { brief_id: string };
+  searchParams: { brief?: string };
 }) {
-  const { brief, athletes, leagues, venues } = await getRecommendations(params.brief_id);
+  const { brief, athletes, leagues, venues } = await getRecommendations(
+    params.brief_id,
+    searchParams.brief
+  );
 
   return (
     <main className="flex-1 overflow-y-auto p-4 md:p-8">

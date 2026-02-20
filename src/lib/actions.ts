@@ -4,20 +4,17 @@ import { redirect } from 'next/navigation';
 import { Brief, Athlete, League, Venue } from '@/lib/types';
 import { athletes, leagues, venues } from '@/lib/data';
 
-// In a real app, this would be stored in a database.
-// For this example, we'll just use it to pass data between server actions.
-let submittedBrief: Brief | null = null;
+// We no longer use a server-side variable, as it's unreliable in a serverless environment.
+// The brief data is now passed via URL parameters.
 
 export async function submitBrief(brief: Brief) {
   const briefId = `brf_${Date.now()}`;
-  submittedBrief = brief;
 
   // In a real app, you would save the brief to a database and create a lead.
   console.log(`Lead created for brief ${briefId}:`, brief.primary_contact.email);
   
-  // We are not passing the brief in the URL anymore to keep it clean,
-  // since we have a temporary server-side "store" (submittedBrief).
-  redirect(`/recommendations/${briefId}`);
+  const briefQuery = encodeURIComponent(JSON.stringify(brief));
+  redirect(`/recommendations/${briefId}?brief=${briefQuery}`);
 }
 
 type RecommendationResult = {
@@ -45,14 +42,24 @@ const OBJECTIVE_FIT_MAP: Record<string, Record<string, number>> = {
 };
 
 export async function getRecommendations(
-  briefId: string
+  briefId: string,
+  briefQuery?: string
 ): Promise<RecommendationResult> {
-  if (!submittedBrief) {
+  if (!briefQuery) {
     // This would be a DB lookup in a real app
     throw new Error('Brief not found. Please submit a new brief.');
   }
 
-  const brief = submittedBrief;
+  const brief: Brief = JSON.parse(briefQuery);
+
+  // The date comes in as a string from JSON, so we need to convert it back to a Date object.
+  if (brief.timeline && brief.timeline.from) {
+    (brief.timeline.from as any) = new Date(brief.timeline.from);
+  }
+  if (brief.timeline && brief.timeline.to) {
+    (brief.timeline.to as any) = new Date(brief.timeline.to);
+  }
+
   const briefSports = new Set(brief.sport_preferences);
   const briefStates = new Set(brief.primary_geography.map(g => g.state));
   const briefCities = new Set(brief.primary_geography.map(g => g.city).filter(Boolean));
